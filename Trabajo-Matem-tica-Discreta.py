@@ -1,7 +1,7 @@
 import numpy as np
 import random as rd
 import pandas as pd
-
+from colorama import Fore, Back, Style
 def validar_num(entrada, min_valor, max_valor):
     if min_valor <= entrada <= max_valor:
         return entrada
@@ -72,11 +72,24 @@ def Main():
                     print("Debe insertar un numero")   
 
         elif opcion == 2:
+            for i in range(x):
+                matriz[i][x]=0
             if matriz is None:
                 print("Debe crear una matriz primero.")
             else:
-                print("Simulando... (pendiente)")
-        
+                foco_infeccion=0
+                while foco_infeccion==0:
+                    try:
+                        prueba_infec=int(input("Ingrese el trabajador que desea sea "))
+                        if 0<prueba_infec<=x:
+                            foco_infeccion=prueba_infec
+                            matriz[foco_infeccion-1][x]=2
+##80/2=40 -> 80/x  x  100 -> klista.... append= valor q nos da
+
+                        else:
+                            print("El trabajador debe existir dentro de la matriz")
+                    except ValueError:
+                        print("Debe insertar un numero")
         elif opcion == 3:
             if matriz is None:
                 print("Debe crear una matriz primero.")
@@ -91,4 +104,6 @@ def Main():
             print("Opción inválida.")
 
 np.set_printoptions(threshold=np.inf)
+lista_de_porcentajes=[]
+##lista_de_porcentajes[0] -> dia 1
 Main()
