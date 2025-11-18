@@ -1,0 +1,1376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flujo Máximo - Ford-Fulkerson</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* Pantalla de presentación */
+        .presentation {
+            text-align: center;
+            color: white;
+            padding: 50px 20px;
+        }
+
+        .presentation h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .presentation h2 {
+            font-size: 2em;
+            margin-bottom: 30px;
+        }
+
+        .presentation .members {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px auto;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+        }
+
+        .presentation .members p {
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        /* Botones */
+        .btn {
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            margin: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #e67e22;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-info {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .btn-gray {
+            background: #95a5a6;
+            color: white;
+        }
+
+        /* Menu principal */
+        .menu {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .menu h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5em;
+        }
+
+        .menu-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Editor interactivo */
+        .editor {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .editor-content {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .control-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .control-section h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .input-group {
+            margin: 10px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .canvas-area {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #graphCanvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .edge-list {
+            background: white;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+
+        .edge-item {
+            padding: 8px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .edge-item:hover {
+            background: #f0f0f0;
+        }
+
+        .edge-item.selected {
+            background: #e3f2fd;
+            border-left: 3px solid #2196f3;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            color: #0c5460;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border: 2px solid #28a745;
+            color: #155724;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            color: #721c24;
+        }
+
+        /* Resultados */
+        .results {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .max-flow-box {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .max-flow-box h2 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            background: #f8f9fa;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: #3498db;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 0 8px 8px 8px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .path-list, .cut-list {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .path-item, .cut-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f0f0f0;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .legend-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .node-source { background: #ffcccb; }
+        .node-sink { background: #c8e6c9; }
+        .node-intermediate { background: #b8c5ff; }
+
+        @media (max-width: 1024px) {
+            .editor-content {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Pantalla de Presentación -->
+        <div id="presentationScreen" class="screen active">
+            <div class="presentation">
+                <h1>Matemática Computacional</h1>
+                <h2>Proyecto: Flujo Máximo con Algoritmo de Ford-Fulkerson</h2>
+                <div class="members">
+                    <p>Leonardo Williams Chavez Corrales</p>
+                    <p>Carlos Alberto Masias Espinoza</p>
+                    <p>Andy Alfredo Hipolito Salcedo Muñoz</p>
+                    <p>Joaquín Estuardo Valera Herrera</p>
+                    <p>Piero Benjamin Acevedo Chavez</p>
+                </div>
+                <button class="btn btn-primary" onclick="showScreen('menuScreen')">Ingresar a la Aplicación</button>
+            </div>
+        </div>
+
+        <!-- Menú Principal -->
+        <div id="menuScreen" class="screen">
+            <div class="menu">
+                <h1>Aplicación de Flujo Máximo</h1>
+                <div class="menu-buttons">
+                    <button class="btn btn-secondary" onclick="showScreen('editorScreen')">
+                        1. Crear Grafo Interactivamente
+                    </button>
+                    <button class="btn btn-warning" onclick="generateRandomGraph()">
+                        2. Generar Grafo Aleatorio
+                    </button>
+                    <button class="btn btn-info" onclick="showCurrentGraph()">
+                        3. Mostrar Grafo Actual
+                    </button>
+                    <button class="btn btn-danger" onclick="calculateMaxFlow()">
+                        4. Calcular Flujo Máximo
+                    </button>
+                    <button class="btn btn-gray" onclick="showScreen('goodbyeScreen')">
+                        5. Salir
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Interactivo -->
+        <div id="editorScreen" class="screen">
+            <div class="editor">
+                <h1 style="text-align: center; color: #2c3e50; margin-bottom: 20px;">Editor Interactivo de Grafo</h1>
+                
+                <div class="alert alert-warning">
+                    <strong>⚠️ IMPORTANTE: Requisitos de Conectividad</strong>
+                    <ul style="margin: 10px 0 0 20px;">
+                        <li>Todos los nodos intermedios DEBEN estar conectados al nodo origen Y al nodo destino</li>
+                        <li>El sistema validará las conexiones antes de generar el grafo</li>
+                    </ul>
+                </div>
+
+                <div class="editor-content">
+                    <div class="controls">
+                        <div class="control-section">
+                            <h3>Configuración del Grafo</h3>
+                            <div class="input-group">
+                                <label>Cantidad de nodos (8-16):</label>
+                                <input type="number" id="numNodes" value="8" min="8" max="16">
+                            </div>
+                            <div class="input-group">
+                                <label style="color: #c0392b;">Nodo Origen:</label>
+                                <input type="number" id="sourceNode" value="1" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label style="color: #27ae60;">Nodo Destino:</label>
+                                <input type="number" id="sinkNode" value="8" min="1">
+                            </div>
+                            <button class="btn btn-primary" style="width: 100%;" onclick="createNodes()">Crear Nodos</button>
+                        </div>
+
+                        <div class="control-section">
+                            <h3>Agregar Canal</h3>
+                            <div class="input-group">
+                                <label>Desde Nodo:</label>
+                                <input type="number" id="edgeFrom" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label>Hacia Nodo:</label>
+                                <input type="number" id="edgeTo" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label>Capacidad:</label>
+                                <input type="number" id="edgeCapacity" min="1" value="10">
+                            </div>
+                            <button class="btn btn-secondary" style="width: 100%;" onclick="addEdge()">Agregar Canal</button>
+                        </div>
+
+                        <div class="control-section">
+                            <h3>Eliminar Conexión</h3>
+                            <div class="input-group">
+                                <label>Desde Nodo:</label>
+                                <input type="number" id="delEdgeFrom" min="1">
+                            </div>
+                            <div class="input-group">
+                                <label>Hacia Nodo:</label>
+                                <input type="number" id="delEdgeTo" min="1">
+                            </div>
+                            <button class="btn btn-warning" style="width: 100%;" onclick="deleteSpecificEdge()">Eliminar Conexión</button>
+                        </div>
+
+                        <div class="control-section">
+                            <h3>Canales Creados</h3>
+                            <div id="edgeList" class="edge-list"></div>
+                            <button class="btn btn-danger" style="width: 100%;" onclick="deleteSelectedEdge()">Eliminar Seleccionado</button>
+                        </div>
+                    </div>
+
+                    <div class="canvas-area">
+                        <h3 style="text-align: center; margin-bottom: 15px;">Vista Previa del Grafo</h3>
+                        <canvas id="graphCanvas" width="800" height="600"></canvas>
+                        <div style="margin-top: 20px; text-align: center;">
+                            <button class="btn btn-primary" onclick="validateAndGenerate()">Generar Grafo y Continuar</button>
+                            <button class="btn btn-gray" onclick="showScreen('menuScreen')">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Resultados -->
+        <div id="resultsScreen" class="screen">
+            <div class="results">
+                <div class="result-header">
+                    <h1 style="color: #2c3e50;">Resultado: Flujo Máximo</h1>
+                    <div class="max-flow-box">
+                        <p style="margin: 0; font-size: 1.2em;">Flujo Máximo Total</p>
+                        <h2 id="maxFlowValue">0</h2>
+                    </div>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab(0)">Caminos Aumentantes</button>
+                    <button class="tab" onclick="switchTab(1)">Corte Mínimo</button>
+                    <button class="tab" onclick="switchTab(2)">Visualización</button>
+                </div>
+
+                <div id="pathsTab" class="tab-content active">
+                    <h3>Caminos Aumentantes Utilizados:</h3>
+                    <div id="pathsList" class="path-list"></div>
+                </div>
+
+                <div id="cutTab" class="tab-content">
+                    <div class="alert alert-info">
+                        <strong>El corte mínimo divide el grafo en dos conjuntos:</strong>
+                        <ul style="margin: 10px 0 0 20px;">
+                            <li><strong>Conjunto S:</strong> Nodos alcanzables desde la fuente</li>
+                            <li><strong>Conjunto T:</strong> Nodos no alcanzables desde la fuente</li>
+                        </ul>
+                    </div>
+                    <div id="setsInfo" style="margin: 20px 0;"></div>
+                    <h3>Aristas que forman el Corte Mínimo:</h3>
+                    <div id="cutList" class="cut-list"></div>
+                    <div class="alert alert-success" style="margin-top: 20px; text-align: center;">
+                        <strong>✓ Teorema verificado: Flujo Máximo = Capacidad del Corte Mínimo</strong>
+                    </div>
+                </div>
+
+                <div id="visualTab" class="tab-content">
+                    <h3 style="text-align: center; margin-bottom: 15px;">Visualización del Corte Mínimo</h3>
+                    <p style="text-align: center; color: #e74c3c; font-style: italic; margin-bottom: 15px;">
+                        Las aristas ROJAS representan el corte mínimo. Formato: Capacidad/Flujo
+                    </p>
+                    <canvas id="resultCanvas" width="900" height="600" style="display: block; margin: 0 auto; border: 2px solid #ddd; border-radius: 8px;"></canvas>
+                    <div class="legend">
+                        <div class="legend-item">
+                            <div class="legend-circle node-source"></div>
+                            <span>Conjunto S (con Fuente)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-circle node-sink"></div>
+                            <span>Conjunto T (con Sumidero)</span>
+                        </div>
+                        <div class="legend-item">
+                            <div style="width: 30px; height: 4px; background: #e74c3c;"></div>
+                            <span>Aristas del Corte</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 30px;">
+                    <button class="btn btn-gray" onclick="showScreen('menuScreen')">Volver al Menú</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pantalla de Despedida -->
+        <div id="goodbyeScreen" class="screen">
+            <div class="presentation">
+                <h1>¡Gracias por usar la aplicación!</h1>
+                <h2 style="margin: 30px 0;">Proyecto de Matemática Computacional</h2>
+                <p style="font-size: 1.3em; margin-bottom: 50px;">Algoritmo de Ford-Fulkerson</p>
+                <button class="btn btn-primary" onclick="showScreen('menuScreen')">Volver al Menú</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Estado global de la aplicación
+        let graph = {
+            nodes: [],
+            edges: [],
+            capacity: null,
+            numNodes: 0,
+            source: 0,
+            sink: 0
+        };
+
+        let selectedEdgeIndex = -1;
+        let maxFlowResult = null;
+
+        // Funciones de navegación
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            document.querySelectorAll('.tab')[index].classList.add('active');
+            document.querySelectorAll('.tab-content')[index].classList.add('active');
+
+            if (index === 2) {
+                drawResultGraph();
+            }
+        }
+
+        // Crear nodos
+        function createNodes() {
+            const numNodes = parseInt(document.getElementById('numNodes').value);
+            const source = parseInt(document.getElementById('sourceNode').value);
+            const sink = parseInt(document.getElementById('sinkNode').value);
+
+            if (numNodes < 8 || numNodes > 16) {
+                alert('El número de nodos debe estar entre 8 y 16');
+                return;
+            }
+
+            if (source < 1 || source > numNodes || sink < 1 || sink > numNodes) {
+                alert(`Los nodos origen y destino deben estar entre 1 y ${numNodes}`);
+                return;
+            }
+
+            if (source === sink) {
+                alert('El nodo origen y destino no pueden ser el mismo');
+                return;
+            }
+
+            graph.numNodes = numNodes;
+            graph.nodes = Array.from({length: numNodes}, (_, i) => i);
+            graph.edges = [];
+            graph.source = source - 1;
+            graph.sink = sink - 1;
+
+            updateEdgeList();
+            drawGraph();
+
+            alert(`✓ Se crearon ${numNodes} nodos\nOrigen: Nodo ${source}\nDestino: Nodo ${sink}`);
+        }
+
+        // Agregar arista
+        function addEdge() {
+            if (graph.nodes.length === 0) {
+                alert('Primero debe crear los nodos');
+                return;
+            }
+
+            const from = parseInt(document.getElementById('edgeFrom').value) - 1;
+            const to = parseInt(document.getElementById('edgeTo').value) - 1;
+            const capacity = parseInt(document.getElementById('edgeCapacity').value);
+
+            if (from < 0 || from >= graph.numNodes || to < 0 || to >= graph.numNodes) {
+                alert(`Los nodos deben estar entre 1 y ${graph.numNodes}`);
+                return;
+            }
+
+            if (from === to) {
+                alert('No se permiten ciclos (mismo nodo)');
+                return;
+            }
+
+            if (capacity <= 0) {
+                alert('La capacidad debe ser mayor a 0');
+                return;
+            }
+
+            // Verificar si ya existe
+            const existingIndex = graph.edges.findIndex(e => e.from === from && e.to === to);
+            if (existingIndex !== -1) {
+                graph.edges[existingIndex].capacity = capacity;
+                alert(`✓ Canal ${from+1}→${to+1} actualizado`);
+            } else {
+                graph.edges.push({from, to, capacity});
+                alert(`✓ Canal agregado: ${from+1}→${to+1} (Cap: ${capacity})`);
+            }
+
+            updateEdgeList();
+            drawGraph();
+
+            document.getElementById('edgeFrom').value = '';
+            document.getElementById('edgeTo').value = '';
+            document.getElementById('edgeCapacity').value = '10';
+        }
+
+        // Eliminar conexión específica
+        function deleteSpecificEdge() {
+            if (graph.nodes.length === 0) {
+                alert('Primero debe crear los nodos');
+                return;
+            }
+
+            const from = parseInt(document.getElementById('delEdgeFrom').value) - 1;
+            const to = parseInt(document.getElementById('delEdgeTo').value) - 1;
+
+            if (from < 0 || from >= graph.numNodes || to < 0 || to >= graph.numNodes) {
+                alert(`Los nodos deben estar entre 1 y ${graph.numNodes}`);
+                return;
+            }
+
+            const index = graph.edges.findIndex(e => e.from === from && e.to === to);
+            if (index !== -1) {
+                graph.edges.splice(index, 1);
+                alert(`✓ Conexión ${from+1}→${to+1} eliminada`);
+                updateEdgeList();
+                drawGraph();
+                document.getElementById('delEdgeFrom').value = '';
+                document.getElementById('delEdgeTo').value = '';
+            } else {
+                alert(`No existe conexión desde ${from+1} hacia ${to+1}`);
+            }
+        }
+
+        // Eliminar arista seleccionada
+        function deleteSelectedEdge() {
+            if (selectedEdgeIndex !== -1) {
+                const edge = graph.edges[selectedEdgeIndex];
+                graph.edges.splice(selectedEdgeIndex, 1);
+                selectedEdgeIndex = -1;
+                updateEdgeList();
+                drawGraph();
+                alert(`✓ Canal ${edge.from+1}→${edge.to+1} eliminado`);
+            }
+        }
+
+        // Actualizar lista de aristas
+        function updateEdgeList() {
+            const list = document.getElementById('edgeList');
+            list.innerHTML = '';
+
+            graph.edges.forEach((edge, index) => {
+                const item = document.createElement('div');
+                item.className = 'edge-item';
+                item.textContent = `  ${edge.from+1} → ${edge.to+1}  [Cap: ${edge.capacity}]`;
+                item.onclick = () => {
+                    selectedEdgeIndex = index;
+                    document.querySelectorAll('.edge-item').forEach(e => e.classList.remove('selected'));
+                    item.classList.add('selected');
+                };
+                list.appendChild(item);
+            });
+        }
+
+        // Calcular posiciones de nodos
+        function calculatePositions(n, width, height) {
+            const positions = [];
+            const margin = 60;
+            
+            if (n <= 3) {
+                const spacing = (width - 2 * margin) / (n + 1);
+                for (let i = 0; i < n; i++) {
+                    positions.push({x: margin + (i + 1) * spacing, y: height / 2});
+                }
+            } else {
+                const layers = Math.min(3, Math.ceil(n / 3));
+                const nodesPerLayer = Math.ceil(n / layers);
+                const xSpacing = (width - 2 * margin) / (layers + 1);
+
+                for (let i = 0; i < n; i++) {
+                    const layer = Math.floor(i / nodesPerLayer);
+                    const posInLayer = i % nodesPerLayer;
+                    const nodesInLayer = Math.min(nodesPerLayer, n - layer * nodesPerLayer);
+                    
+                    const x = margin + (layer + 1) * xSpacing;
+                    const ySpacing = (height - 2 * margin) / (nodesInLayer + 1);
+                    const y = margin + (posInLayer + 1) * ySpacing;
+                    
+                    positions.push({x, y});
+                }
+            }
+            
+            return positions;
+        }
+
+        // Dibujar grafo
+        function drawGraph() {
+            const canvas = document.getElementById('graphCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (graph.nodes.length === 0) {
+                ctx.font = '20px Arial';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('Cree nodos primero', canvas.width / 2, canvas.height / 2);
+                return;
+            }
+
+            const positions = calculatePositions(graph.numNodes, canvas.width, canvas.height);
+
+            // Dibujar aristas
+            graph.edges.forEach(edge => {
+                const from = positions[edge.from];
+                const to = positions[edge.to];
+                
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                const ratio = 30 / dist;
+                const x1 = from.x + dx * ratio;
+                const y1 = from.y + dy * ratio;
+                const x2 = to.x - dx * ratio;
+                const y2 = to.y - dy * ratio;
+
+                // Flecha
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = '#5271ff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Punta de flecha
+                const angle = Math.atan2(dy, dx);
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - 10 * Math.cos(angle - Math.PI / 6), y2 - 10 * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(x2 - 10 * Math.cos(angle + Math.PI / 6), y2 - 10 * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.fillStyle = '#5271ff';
+                ctx.fill();
+
+                // Etiqueta de capacidad
+                const mx = from.x + dx * 0.4;
+                const my = from.y + dy * 0.4;
+                
+                ctx.fillStyle = 'white';
+                ctx.fillRect(mx - 18, my - 12, 36, 24);
+                ctx.strokeStyle = '#ddd';
+                ctx.strokeRect(mx - 18, my - 12, 36, 24);
+                
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(edge.capacity, mx, my);
+            });
+
+            // Dibujar nodos
+            positions.forEach((pos, i) => {
+                let color, outline;
+                if (i === graph.source) {
+                    color = '#ffcccb';
+                    outline = '#e74c3c';
+                } else if (i === graph.sink) {
+                    color = '#c8e6c9';
+                    outline = '#27ae60';
+                } else {
+                    color = '#b8c5ff';
+                    outline = '#5271ff';
+                }
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 25, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = outline;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i + 1, pos.x, pos.y);
+            });
+        }
+
+        // Validar conectividad
+        function validateConnectivity() {
+            if (graph.edges.length === 0) {
+                return {valid: false, problems: []};
+            }
+
+            const n = graph.numNodes;
+            const matrix = Array(n).fill(0).map(() => Array(n).fill(0));
+            graph.edges.forEach(e => matrix[e.from][e.to] = e.capacity);
+
+            const problems = [];
+
+            for (let node = 0; node < n; node++) {
+                if (node === graph.source || node === graph.sink) continue;
+
+                // BFS desde origen
+                const visitedFromSource = new Array(n).fill(false);
+                const queue = [graph.source];
+                visitedFromSource[graph.source] = true;
+
+                while (queue.length > 0) {
+                    const u = queue.shift();
+                    for (let v = 0; v < n; v++) {
+                        if (!visitedFromSource[v] && matrix[u][v] > 0) {
+                            queue.push(v);
+                            visitedFromSource[v] = true;
+                        }
+                    }
+                }
+
+                // BFS hacia destino
+                const visitedToSink = new Array(n).fill(false);
+                const queue2 = [graph.sink];
+                visitedToSink[graph.sink] = true;
+
+                while (queue2.length > 0) {
+                    const u = queue2.shift();
+                    for (let v = 0; v < n; v++) {
+                        if (!visitedToSink[v] && matrix[v][u] > 0) {
+                            queue2.push(v);
+                            visitedToSink[v] = true;
+                        }
+                    }
+                }
+
+                const connectedToSource = visitedFromSource[node];
+                const connectedToSink = visitedToSink[node];
+
+                if (!connectedToSource || !connectedToSink) {
+                    const info = [];
+                    if (!connectedToSource) info.push('origen');
+                    if (!connectedToSink) info.push('destino');
+                    problems.push({node, info});
+                }
+            }
+
+            return {valid: problems.length === 0, problems};
+        }
+
+        // Validar y generar grafo
+        function validateAndGenerate() {
+            if (graph.nodes.length === 0) {
+                alert('Primero debe crear nodos');
+                return;
+            }
+
+            const validation = validateConnectivity();
+
+            if (!validation.valid) {
+                let msg = '❌ GRAFO INVÁLIDO: Nodos sin conectividad completa\n\n';
+                msg += 'Los siguientes nodos NO están conectados correctamente:\n\n';
+                
+                validation.problems.forEach(p => {
+                    msg += `• Nodo ${p.node+1}: No conectado al ${p.info.join(' y ')}\n`;
+                });
+                
+                msg += '\n⚠️ Todos los nodos intermedios deben tener:\n';
+                msg += '  - Un camino desde el nodo origen\n';
+                msg += '  - Un camino hacia el nodo destino';
+                
+                alert(msg);
+                return;
+            }
+
+            const n = graph.numNodes;
+            const matrix = Array(n).fill(0).map(() => Array(n).fill(0));
+            graph.edges.forEach(e => matrix[e.from][e.to] = e.capacity);
+            graph.capacity = matrix;
+
+            alert(`✓ Grafo Válido\n\nGrafo generado exitosamente:\n• ${n} nodos\n• ${graph.edges.length} canales\n• Todos los nodos están correctamente conectados`);
+            showScreen('menuScreen');
+        }
+
+        // Generar grafo aleatorio
+        function generateRandomGraph() {
+            const n = 8 + Math.floor(Math.random() * 9); // 8-16 nodos
+            graph.numNodes = n;
+            graph.source = 0;
+            graph.sink = n - 1;
+            graph.nodes = Array.from({length: n}, (_, i) => i);
+            graph.edges = [];
+
+            // Crear camino principal
+            const mainPath = Array.from({length: n}, (_, i) => i);
+            for (let i = 1; i < n - 1; i++) {
+                const j = i + Math.floor(Math.random() * (n - i));
+                [mainPath[i], mainPath[j]] = [mainPath[j], mainPath[i]];
+            }
+
+            for (let i = 0; i < mainPath.length - 1; i++) {
+                graph.edges.push({
+                    from: mainPath[i],
+                    to: mainPath[i + 1],
+                    capacity: 5 + Math.floor(Math.random() * 11)
+                });
+            }
+
+            // Conexiones desde origen
+            const fromSource = Math.min(3, n - 2);
+            const intermediate = Array.from({length: n - 2}, (_, i) => i + 1);
+            for (let i = 0; i < fromSource; i++) {
+                const idx = Math.floor(Math.random() * intermediate.length);
+                const node = intermediate.splice(idx, 1)[0];
+                if (!graph.edges.find(e => e.from === 0 && e.to === node)) {
+                    graph.edges.push({
+                        from: 0,
+                        to: node,
+                        capacity: 5 + Math.floor(Math.random() * 11)
+                    });
+                }
+            }
+
+            // Conexiones hacia destino
+            const toSink = Math.min(3, n - 2);
+            const toSinkNodes = Array.from({length: n - 2}, (_, i) => i + 1);
+            for (let i = 0; i < toSink; i++) {
+                const idx = Math.floor(Math.random() * toSinkNodes.length);
+                const node = toSinkNodes.splice(idx, 1)[0];
+                if (!graph.edges.find(e => e.from === node && e.to === n - 1)) {
+                    graph.edges.push({
+                        from: node,
+                        to: n - 1,
+                        capacity: 5 + Math.floor(Math.random() * 11)
+                    });
+                }
+            }
+
+            // Conexiones adicionales
+            const extraEdges = Math.floor(n / 2);
+            for (let i = 0; i < extraEdges; i++) {
+                const from = Math.floor(Math.random() * (n - 1));
+                const to = from + 1 + Math.floor(Math.random() * (n - from - 1));
+                if (!graph.edges.find(e => e.from === from && e.to === to)) {
+                    graph.edges.push({
+                        from,
+                        to,
+                        capacity: 3 + Math.floor(Math.random() * 10)
+                    });
+                }
+            }
+
+            const matrix = Array(n).fill(0).map(() => Array(n).fill(0));
+            graph.edges.forEach(e => matrix[e.from][e.to] = e.capacity);
+            graph.capacity = matrix;
+
+            alert(`✓ Grafo Aleatorio Generado\n\n• ${n} nodos\n• ${graph.edges.length} canales\n• Origen: Nodo 1\n• Destino: Nodo ${n}`);
+            showCurrentGraph();
+        }
+
+        // Mostrar grafo actual
+        function showCurrentGraph() {
+            if (!graph.capacity) {
+                alert('No hay grafo para mostrar');
+                return;
+            }
+            
+            showScreen('editorScreen');
+            document.getElementById('numNodes').value = graph.numNodes;
+            document.getElementById('sourceNode').value = graph.source + 1;
+            document.getElementById('sinkNode').value = graph.sink + 1;
+            updateEdgeList();
+            drawGraph();
+        }
+
+        // BFS para Ford-Fulkerson
+        function bfs(residual, source, sink, parent) {
+            const n = residual.length;
+            const visited = new Array(n).fill(false);
+            const queue = [source];
+            visited[source] = true;
+
+            while (queue.length > 0) {
+                const u = queue.shift();
+                
+                for (let v = 0; v < n; v++) {
+                    if (!visited[v] && residual[u][v] > 0) {
+                        queue.push(v);
+                        visited[v] = true;
+                        parent[v] = u;
+                        if (v === sink) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Algoritmo Ford-Fulkerson
+        function fordFulkerson() {
+            const n = graph.numNodes;
+            const source = graph.source;
+            const sink = graph.sink;
+            
+            const residual = graph.capacity.map(row => [...row]);
+            const flowMatrix = Array(n).fill(0).map(() => Array(n).fill(0));
+            
+            const parent = new Array(n);
+            let maxFlow = 0;
+            const paths = [];
+
+            while (bfs(residual, source, sink, parent)) {
+                let pathFlow = Infinity;
+                const path = [];
+                
+                for (let v = sink; v !== source; v = parent[v]) {
+                    const u = parent[v];
+                    pathFlow = Math.min(pathFlow, residual[u][v]);
+                    path.unshift(v);
+                }
+                path.unshift(source);
+
+                for (let v = sink; v !== source; v = parent[v]) {
+                    const u = parent[v];
+                    residual[u][v] -= pathFlow;
+                    residual[v][u] += pathFlow;
+                    flowMatrix[u][v] += pathFlow;
+                }
+
+                maxFlow += pathFlow;
+                paths.push({
+                    path: path.map(n => n + 1).join(' → '),
+                    flow: pathFlow
+                });
+
+                parent.fill(-1);
+            }
+
+            // Encontrar corte mínimo
+            const visited = new Array(n).fill(false);
+            const queue = [source];
+            visited[source] = true;
+
+            while (queue.length > 0) {
+                const u = queue.shift();
+                for (let v = 0; v < n; v++) {
+                    if (!visited[v] && residual[u][v] > 0) {
+                        queue.push(v);
+                        visited[v] = true;
+                    }
+                }
+            }
+
+            const minCut = [];
+            let cutCapacity = 0;
+            for (let u = 0; u < n; u++) {
+                if (visited[u]) {
+                    for (let v = 0; v < n; v++) {
+                        if (!visited[v] && graph.capacity[u][v] > 0) {
+                            minCut.push({from: u, to: v, capacity: graph.capacity[u][v]});
+                            cutCapacity += graph.capacity[u][v];
+                        }
+                    }
+                }
+            }
+
+            const setS = [];
+            const setT = [];
+            for (let i = 0; i < n; i++) {
+                if (visited[i]) setS.push(i + 1);
+                else setT.push(i + 1);
+            }
+
+            return {
+                maxFlow,
+                paths,
+                minCut,
+                cutCapacity,
+                setS,
+                setT,
+                visited,
+                flowMatrix
+            };
+        }
+
+        // Calcular flujo máximo
+        function calculateMaxFlow() {
+            if (!graph.capacity) {
+                alert('Primero debe crear un grafo');
+                return;
+            }
+
+            maxFlowResult = fordFulkerson();
+
+            document.getElementById('maxFlowValue').textContent = maxFlowResult.maxFlow;
+
+            // Mostrar caminos
+            const pathsList = document.getElementById('pathsList');
+            pathsList.innerHTML = '';
+            maxFlowResult.paths.forEach((p, i) => {
+                const item = document.createElement('div');
+                item.className = 'path-item';
+                item.textContent = `Camino ${i + 1}: ${p.path}  →  Flujo: ${p.flow}`;
+                pathsList.appendChild(item);
+            });
+
+            // Mostrar conjuntos
+            const setsInfo = document.getElementById('setsInfo');
+            setsInfo.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+                    <div style="background: #ffe6e6; padding: 20px; border-radius: 10px; border: 2px solid #c0392b;">
+                        <strong style="color: #c0392b; font-size: 1.1em;">Conjunto S (con Fuente)</strong>
+                        <p style="margin-top: 10px; font-size: 1.2em;">${maxFlowResult.setS.join(', ')}</p>
+                    </div>
+                    <div style="background: #e6ffe6; padding: 20px; border-radius: 10px; border: 2px solid #27ae60;">
+                        <strong style="color: #27ae60; font-size: 1.1em;">Conjunto T (con Sumidero)</strong>
+                        <p style="margin-top: 10px; font-size: 1.2em;">${maxFlowResult.setT.join(', ')}</p>
+                    </div>
+                </div>
+            `;
+
+            // Mostrar aristas del corte
+            const cutList = document.getElementById('cutList');
+            cutList.innerHTML = '';
+            maxFlowResult.minCut.forEach((c, i) => {
+                const item = document.createElement('div');
+                item.className = 'cut-item';
+                item.textContent = `Arista ${i + 1}: Nodo ${c.from + 1} → Nodo ${c.to + 1}  (Capacidad: ${c.capacity})`;
+                cutList.appendChild(item);
+            });
+
+            const summary = document.createElement('div');
+            summary.className = 'cut-item';
+            summary.style.borderLeft = '4px solid #27ae60';
+            summary.style.background = '#e8f5e9';
+            summary.style.fontWeight = 'bold';
+            summary.innerHTML = `
+                ${'='.repeat(60)}<br>
+                Capacidad Total del Corte: ${maxFlowResult.cutCapacity}<br>
+                (Igual al Flujo Máximo: ${maxFlowResult.maxFlow})
+            `;
+            cutList.appendChild(summary);
+
+            showScreen('resultsScreen');
+        }
+
+        // Dibujar grafo con resultados
+        function drawResultGraph() {
+            if (!maxFlowResult) return;
+
+            const canvas = document.getElementById('resultCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const positions = calculatePositions(graph.numNodes, canvas.width, canvas.height);
+            const cutEdges = new Set(maxFlowResult.minCut.map(c => `${c.from},${c.to}`));
+
+            // Dibujar aristas
+            graph.edges.forEach(edge => {
+                const from = positions[edge.from];
+                const to = positions[edge.to];
+                const isCut = cutEdges.has(`${edge.from},${edge.to}`);
+                
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                const ratio = 30 / dist;
+                const x1 = from.x + dx * ratio;
+                const y1 = from.y + dy * ratio;
+                const x2 = to.x - dx * ratio;
+                const y2 = to.y - dy * ratio;
+
+                // Flecha
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.strokeStyle = isCut ? '#e74c3c' : '#5271ff';
+                ctx.lineWidth = isCut ? 4 : 2;
+                ctx.stroke();
+
+                // Punta de flecha
+                const angle = Math.atan2(dy, dx);
+                ctx.beginPath();
+                ctx.moveTo(x2, y2);
+                ctx.lineTo(x2 - 12 * Math.cos(angle - Math.PI / 6), y2 - 12 * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(x2 - 12 * Math.cos(angle + Math.PI / 6), y2 - 12 * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.fillStyle = isCut ? '#e74c3c' : '#5271ff';
+                ctx.fill();
+
+                // Etiqueta
+                const mx = from.x + dx * 0.4;
+                const my = from.y + dy * 0.4;
+                
+                ctx.fillStyle = isCut ? '#ffe6e6' : 'white';
+                ctx.fillRect(mx - 25, my - 12, 50, 24);
+                if (isCut) {
+                    ctx.strokeStyle = '#e74c3c';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(mx - 25, my - 12, 50, 24);
+                }
+                
+                const flow = maxFlowResult.flowMatrix[edge.from][edge.to];
+                ctx.fillStyle = isCut ? '#e74c3c' : '#000';
+                ctx.font = 'bold 12px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(`${edge.capacity}/${flow}`, mx, my);
+            });
+
+            // Dibujar nodos
+            positions.forEach((pos, i) => {
+                let color, outline;
+                if (maxFlowResult.visited[i]) {
+                    if (i === graph.source) {
+                        color = '#ffcccb';
+                        outline = '#c0392b';
+                    } else {
+                        color = '#ffe6e6';
+                        outline = '#e74c3c';
+                    }
+                } else {
+                    if (i === graph.sink) {
+                        color = '#c8e6c9';
+                        outline = '#229954';
+                    } else {
+                        color = '#e6ffe6';
+                        outline = '#27ae60';
+                    }
+                }
+
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, 30, 0, 2 * Math.PI);
+                ctx.fillStyle = color;
+                ctx.fill();
+                ctx.strokeStyle = outline;
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.fillStyle = '#000';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i + 1, pos.x, pos.y);
+            });
+
+            // Dibujar línea de corte
+            if (maxFlowResult.minCut.length > 0) {
+                const cutPoints = maxFlowResult.minCut.map(c => {
+                    const from = positions[c.from];
+                    const to = positions[c.to];
+                    return {x: (from.x + to.x) / 2, y: (from.y + to.y) / 2};
+                });
+
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 4;
+                ctx.setLineDash([15, 10]);
+                
+                const minY = Math.min(...cutPoints.map(p => p.y));
+                const maxY = Math.max(...cutPoints.map(p => p.y));
+                const avgX = cutPoints.reduce((sum, p) => sum + p.x, 0) / cutPoints.length;
+
+                if (maxY - minY > 100) {
+                    ctx.beginPath();
+                    ctx.moveTo(avgX, 30);
+                    ctx.lineTo(avgX, canvas.height - 30);
+                    ctx.stroke();
+                } else {
+                    const avgY = cutPoints.reduce((sum, p) => sum + p.y, 0) / cutPoints.length;
+                    ctx.beginPath();
+                    ctx.moveTo(50, avgY);
+                    ctx.lineTo(canvas.width - 50, avgY);
+                    ctx.stroke();
+                }
+
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#ff0000';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('✂ CORTE MÍNIMO', canvas.width / 2, 20);
+            }
+        }
+
+        // Inicializar
+        drawGraph();
+    </script>
+</body>
+</html>
